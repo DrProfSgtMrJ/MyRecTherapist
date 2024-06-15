@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"pnpm:dev:*\"",
+    "dev:frontend": "vite --port 3000",
+    "dev:backend": "cargo watch -C ../backend -x run",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -16,6 +18,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "concurrently": "^8.2.2",
     "pinia": "^2.1.7",
     "vue": "^3.4.21"
   },
