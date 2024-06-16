@@ -86,6 +86,7 @@ onMounted(() => {
 
                   <div class="text-center">
                     <MaterialButton
+                      v-on:click="() => console.log('Sign in')"
                       class="my-4 mb-2"
                       variant="gradient"
                       color="success"
