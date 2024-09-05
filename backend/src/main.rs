@@ -1,25 +1,23 @@
 
-use axum::{
-    routing::get,
-    Json, Router, Server,
-};
-use std::net::SocketAddr;
-
+use axum::{response::IntoResponse, routing::get, Json, Router};
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/", get(handler));
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3030));
+    let app = Router::new().route("/api/heathchecker", get(health_checker_handler));
 
-    Server::bind(&addr).serve(app.into_make_service()).await.expect("Failed to start server");
-    println!("Hello, world!");
+    println!("🚀 Server started successfully");
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3030").await.expect("Failed to bind port 3030");
+    axum::serve(listener, app).await.expect("Server failed to start");
 }
 
-#[derive(serde::Serialize)]
-struct Message {
-    message: String
-}
+pub async fn health_checker_handler() -> impl IntoResponse {
+    const MESSAGE: &str = "JWT Authentication in Rust using Axum, Postgress, and SQLX";
 
-async fn handler() -> Json<Message> {
-    Json(Message { message: String::from("Hello, World") })
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": MESSAGE,
+    });
+
+    Json(json_response)
 }
