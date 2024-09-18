@@ -1,4 +1,4 @@
-use std::{fmt::format, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
     extract::State,
@@ -11,9 +11,9 @@ use axum::{
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 
-use super::jwt::TokenClaims;
+use super::{jwt::TokenClaims, ErrorResponseBuilder};
 use super::response::ErrorResponse;
-use crate::AppState;
+use crate::config::AppState;
 
 use crate::query::user::get_user_by_id;
 
@@ -40,11 +40,11 @@ pub async fn auth(
                 })
         });
     let token = token.ok_or_else(|| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "You are not loggin in, please provide token".to_string()
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        ErrorResponseBuilder::new()
+            .status("fail")
+            .error_message("You are not logged in, please provide token".to_string())
+            .status_code(StatusCode::UNAUTHORIZED)
+            .build_json()
     })?;
 
     let claims = decode::<TokenClaims>(
@@ -53,37 +53,37 @@ pub async fn auth(
         &Validation::default(),
     )
     .map_err(|_| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "Invalid token".to_string()
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        ErrorResponseBuilder::new()
+            .status("fail")
+            .error_message("Invalid token".to_string())
+            .status_code(StatusCode::UNAUTHORIZED)
+            .build_json()
     })?
     .claims;
 
     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "Invalid token".to_string()
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        ErrorResponseBuilder::new()
+            .status("fail")
+            .error_message("Invalid token".to_string())
+            .status_code(StatusCode::UNAUTHORIZED)
+            .build_json()
     })?;
 
     let user = get_user_by_id(State(data), user_id).await.map_err(|e| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: format!("Error fetching user from database: {:?}", e)
-        };
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(json_error))
+        ErrorResponseBuilder::new()
+            .status("fail")
+            .error_message(format!("Error fetching user from database: {:?}", e))
+            .status_code(StatusCode::INTERNAL_SERVER_ERROR)
+            .build_json()
     })?;
 
     let user = user.ok_or_else(|| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "The user belonging to this token no longer exists".to_string(),
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        ErrorResponseBuilder::new()
+            .error_message("The user belonging to this token no longer exists".to_string())
+            .status_code(StatusCode::UNAUTHORIZED)
+            .build_json()
     })?;
+
     req.extensions_mut().insert(user);
     Ok(next.run(req).await)
 }

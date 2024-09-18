@@ -1,8 +1,8 @@
 mod config;
-mod query;
-mod models;
 mod auth;
 mod handlers;
+mod models;
+mod query;
 
 use axum::{response::IntoResponse, routing::get, Json, Router};
 use std::sync::Arc;

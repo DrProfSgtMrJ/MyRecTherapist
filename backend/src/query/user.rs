@@ -1,8 +1,10 @@
 use axum::extract::State;
 use std::sync::Arc;
-use crate::AppState;
-use crate::models::user::User;
+use crate::models::User;
+
 use uuid::Uuid;
+
+use crate::config::AppState;
 
 pub async fn get_user_by_id(State(data): State<Arc<AppState>>, user_id: Uuid) -> Result<Option<User>, sqlx::Error> {
     sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
